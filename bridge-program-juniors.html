@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Bridge Program</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#111;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'DM Sans',sans-serif;color:#F5F2EC;
+    padding:2rem 1rem 4rem;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events:none;z-index:0;opacity:.5;
+  }
+  .wrapper{position:relative;z-index:1;width:100%;max-width:640px;}
+
+  .header{text-align:center;margin-bottom:2rem;}
+  .eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.28em;color:#E8192C;text-transform:uppercase;margin-bottom:.5rem;}
+  .prog-title{font-family:'Bebas Neue',cursive;font-size:clamp(3rem,9vw,5.5rem);line-height:.88;letter-spacing:.03em;color:#F5F2EC;}
+  .prog-title span{color:#E8192C;}
+  .prog-sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;color:#444;text-transform:uppercase;margin-top:.6rem;}
+
+  .stats{display:flex;gap:0;border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a;margin-bottom:2rem;padding:.8rem 0;}
+  .stat{flex:1;text-align:center;}
+  .stat+.stat{border-left:1px solid #2a2a2a;}
+  .stat-val{font-family:'Bebas Neue',cursive;font-size:2rem;line-height:1;color:#F0C040;}
+  .stat-label{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:#555;text-transform:uppercase;margin-top:.2rem;}
+
+  .banner{display:flex;align-items:center;gap:.5rem;margin-bottom:1.4rem;padding:.55rem .75rem;border:1.5px solid #2a2a2a;}
+  .banner::before,.banner::after{content:'';display:block;width:10px;height:10px;flex-shrink:0;}
+  .banner::before{border-top:2px solid #E8192C;border-left:2px solid #E8192C;}
+  .banner::after{border-bottom:2px solid #E8192C;border-right:2px solid #E8192C;}
+  .banner span{font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:.12em;color:#F5F2EC;flex:1;text-align:center;}
+
+  .track-scroll{overflow-x:auto;padding:1rem 0 .5rem;scrollbar-width:none;}
+  .track-scroll::-webkit-scrollbar{display:none;}
+  .track-row{display:flex;align-items:center;min-width:max-content;padding:0 1rem;}
+
+  .stop-wrap{display:flex;flex-direction:column;align-items:center;width:84px;flex-shrink:0;cursor:pointer;}
+  .stop-bubble{width:58px;height:58px;border-radius:50%;border:2px solid #2a2a2a;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;flex-shrink:0;transition:all .25s;}
+  .stop-bubble.active{border-color:#E8192C;background:#1f0305;box-shadow:0 0 0 3px rgba(232,25,44,.15);}
+  .stop-bubble.done{border-color:#2d5a1b;background:#0e1f08;}
+  .stop-bubble.special-done{border-color:#7a5800;background:#1f1500;}
+  .stop-bubble.locked{filter:grayscale(.6);opacity:.5;}
+
+  .stop-num{position:absolute;top:-7px;right:-5px;width:19px;height:19px;border-radius:50%;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;display:flex;align-items:center;justify-content:center;background:#111;border:1.5px solid #333;color:#555;}
+  .stop-num.active{background:#E8192C;border-color:#E8192C;color:#fff;}
+  .stop-num.done{background:#1e3a10;border-color:#3a6b20;color:#7dc855;}
+  .stop-num.special{background:#3a2800;border-color:#7a5800;color:#F0C040;}
+
+  .stop-label{font-family:'DM Mono',monospace;font-size:9px;color:#333;text-align:center;margin-top:8px;line-height:1.3;max-width:78px;transition:color .25s;}
+  .stop-label.active{color:#E8192C;}
+  .stop-label.done{color:#3a6b20;}
+  .stop-label.special-done{color:#7a5800;}
+
+  .connector{width:18px;height:3px;background:#1e1e1e;align-self:center;margin-bottom:28px;flex-shrink:0;transition:background .4s;}
+  .connector.done{background:#2d5a1b;}
+  .connector.active{background:#E8192C;}
+
+  .reveal-panel{margin:4px 0 0;border:1.5px solid #2a2a2a;border-radius:12px;background:#151515;padding:18px;min-height:110px;transition:border-color .3s;}
+  .reveal-panel.active-panel{border-color:#E8192C;}
+  .reveal-panel.done-panel{border-color:#2d5a1b;}
+  .reveal-panel.special-panel{border-color:#7a5800;}
+
+  .rp-eye{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:#555;margin-bottom:6px;}
+  .rp-eye.active{color:#E8192C;}
+  .rp-eye.done{color:#3a6b20;}
+  .rp-eye.special{color:#7a5800;}
+
+  .rp-title{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:.05em;color:#F5F2EC;margin-bottom:6px;}
+  .rp-desc{font-size:13px;color:#888;line-height:1.6;}
+
+  .rp-badge{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;}
+  .badge-green{background:rgba(76,175,80,.1);color:#4caf50;border:1px solid rgba(76,175,80,.2);}
+  .badge-gold{background:rgba(240,192,64,.12);color:#F0C040;border:1px solid rgba(240,192,64,.25);}
+
+  .nav-row{display:flex;justify-content:center;gap:12px;margin:16px 0 0;}
+  .nav-btn{background:#1a1a1a;border:1.5px solid #2a2a2a;border-radius:8px;padding:9px 22px;color:#888;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+  .nav-btn:hover{border-color:#444;color:#F5F2EC;background:#222;}
+  .nav-btn.primary{background:#E8192C;border-color:#E8192C;color:#fff;}
+  .nav-btn.primary:hover{background:#ff2d40;}
+  .nav-btn:disabled{opacity:.3;cursor:default;pointer-events:none;}
+
+  .win-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:100;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;}
+  .win-overlay.show{display:flex;}
+  .win-trophy{font-size:72px;animation:rock 2s ease-in-out infinite;}
+  @keyframes rock{0%,100%{transform:rotate(-8deg) scale(1);}50%{transform:rotate(8deg) scale(1.08);}}
+  .win-title{font-family:'Bebas Neue',cursive;font-size:clamp(2.5rem,8vw,4.5rem);color:#F0C040;letter-spacing:3px;margin-top:14px;text-shadow:2px 2px 0 #7a5800;}
+  .win-sub{font-size:14px;color:#999;margin-top:10px;line-height:1.7;max-width:320px;}
+  .win-xp{font-family:'DM Mono',monospace;font-size:11px;color:#7a5800;letter-spacing:2px;margin-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="eyebrow">★ Your Journey ★</div>
+    <div class="prog-title">THE<br><span>BRIDGE</span><br>PROGRAM</div>
+    <div class="prog-sub">Same workplace · Different view</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="s-done">0</div>
+      <div class="stat-label">Unlocked</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-xp">0</div>
+      <div class="stat-label">XP</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">7</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+
+  <div class="banner">
+    <span>Stuck in the grid? The clues below have your back.</span>
+  </div>
+
+  <div class="track-scroll">
+    <div class="track-row" id="trackRow"></div>
+  </div>
+
+  <div class="reveal-panel" id="revealPanel">
+    <div class="rp-eye" id="rpEye">Stage 1</div>
+    <div class="rp-title" id="rpTitle">?</div>
+    <div class="rp-desc" id="rpDesc"></div>
+  </div>
+
+  <div class="nav-row" id="navRow">
+    <button class="nav-btn" onclick="goBack()">Back</button>
+    <button class="nav-btn primary" id="btnNext" onclick="goNext()">Unlock Next</button>
+  </div>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-trophy">🏆</div>
+  <div class="win-title">Treasure Unlocked!</div>
+  <div class="win-sub">You've completed The Bridge Program journey.<br>Every session. Every check-in. You made it.</div>
+  <div class="win-xp" id="winXP">★ TOTAL XP: 0 ★</div>
+  <button class="nav-btn primary" style="margin-top:20px" onclick="resetAll()">Start Over</button>
+</div>
+
+<script>
+const stages = [
+  { icon:'🧊', label:'Ice-Breaking Call',  stage:'Stage 1 · Warmup',      title:'Ice-Breaking Call',            desc:'A relaxed call with your fellow mentors — before the program kicks off. You\'ll get to know each other, understand the format, set shared boundaries, and get clear on what this program is and, just as importantly, what it is not.',   xp:50,  type:'normal'  },
+  { icon:'🎉', label:'Fun Onboarding',     stage:'Stage 2 · Kickoff',     title:'Fun Onboarding Session',       desc:'The full cohort comes together — mentors and managers — for a structured kickoff. You\'ll define objectives together, go through separate training with open discussions, boundary setting and Q&A, address how to navigate tricky dynamics through roleplays, lock in the session schedule, and close with a note to your partner that HR will hand back to them at the very end of the program.',  xp:150, type:'special' },
+  { icon:'⚡', label:'Session 1',          stage:'Stage 3 · Session',     title:'Session 1: Hacking the Comfort Advantage', desc:'A conversation about what helps younger employees feel genuinely comfortable — asking questions, seeking support, and speaking honestly at work. There are no wrong answers here, just real ones.',   xp:200, type:'normal'  },
+  { icon:'🔥', label:'Session 2',          stage:'Stage 4 · Session',     title:'Session 2: Power of Kyūkie & Sonzaikan', desc:'Explore how younger employees think about boundaries outside of work hours — and how digital tools and social media play a role in building careers, visibility, and professional identity today.',      xp:200, type:'normal'  },
+  { icon:'💥', label:'Session 3',          stage:'Stage 5 · Session',     title:'Session 3: Same, Same but Different?', desc:'Sometimes the same situation lands very differently depending on where you\'re sitting. This session is about exploring those moments — not to decide who\'s right, but to understand why two people can experience the exact same thing in two completely different ways.',  xp:200, type:'normal'  },
+  { icon:'🏁', label:'Final Check-in',     stage:'Stage 6 · Finish',      title:'Final Check-in',               desc:'Reflect on what shifted for you, what you\'d do differently, and what this program made possible. This is where your voice becomes the legacy of the program.',      xp:1000,type:'finish'  },
+];
+
+let current=0, unlockedUpTo=-1, totalXP=0;
+function isGold(t){return t==='gold'||t==='finish'||t==='mega'||t==='special';}
+
+function buildBubble(i,state){
+  const s=stages[i];
+  const bub=document.getElementById('bub-'+i);
+  const lbl=document.getElementById('lbl-'+i);
+  bub.innerHTML='';
+  const num=document.createElement('div');num.id='num-'+i;
+  if(state==='done'){
+    bub.className=isGold(s.type)?'stop-bubble special-done':'stop-bubble done';
+    bub.appendChild(document.createTextNode(s.icon));
+    num.className=isGold(s.type)?'stop-num special':'stop-num done';
+    num.textContent=i+1;bub.appendChild(num);
+    lbl.className=isGold(s.type)?'stop-label special-done':'stop-label done';
+    lbl.textContent=s.label;
+  } else if(state==='active'){
+    bub.className='stop-bubble active';
+    bub.appendChild(document.createTextNode('?'));
+    num.className='stop-num active';num.textContent=i+1;bub.appendChild(num);
+    lbl.className='stop-label active';lbl.textContent='?';
+  } else {
+    bub.className='stop-bubble locked';
+    bub.appendChild(document.createTextNode('?'));
+    num.className='stop-num';num.textContent=i+1;bub.appendChild(num);
+    lbl.className='stop-label';lbl.textContent='?';
+  }
+}
+
+function buildTrack(){
+  const row=document.getElementById('trackRow');row.innerHTML='';
+  stages.forEach((s,i)=>{
+    if(i>0){const c=document.createElement('div');c.className='connector';c.id='conn-'+i;row.appendChild(c);}
+    const wrap=document.createElement('div');wrap.className='stop-wrap';wrap.onclick=()=>select(i);
+    const bub=document.createElement('div');bub.id='bub-'+i;bub.className='stop-bubble locked';bub.textContent='?';
+    const num=document.createElement('div');num.id='num-'+i;num.className='stop-num';num.textContent=i+1;bub.appendChild(num);
+    const lbl=document.createElement('div');lbl.id='lbl-'+i;lbl.className='stop-label';lbl.textContent='?';
+    wrap.appendChild(bub);wrap.appendChild(lbl);row.appendChild(wrap);
+  });
+  render();
+}
+
+function render(){
+  stages.forEach((s,i)=>{
+    const conn=document.getElementById('conn-'+i);
+    if(i<=unlockedUpTo){buildBubble(i,'done');if(conn)conn.className='connector done';}
+    else if(i===current){buildBubble(i,'active');if(conn)conn.className='connector active';}
+    else{buildBubble(i,'locked');if(conn)conn.className='connector';}
+  });
+  updatePanel();updateStats();scrollToCurrent();
+}
+
+function updatePanel(){
+  const s=stages[current];
+  const panel=document.getElementById('revealPanel');
+  const eye=document.getElementById('rpEye');
+  const title=document.getElementById('rpTitle');
+  const desc=document.getElementById('rpDesc');
+  const ex=document.getElementById('rpBadge');if(ex)ex.remove();
+  const isUnlocked=current<=unlockedUpTo;
+  if(isUnlocked){
+    const gold=isGold(s.type);
+    panel.className=gold?'reveal-panel special-panel':'reveal-panel done-panel';
+    eye.className=gold?'rp-eye special':'rp-eye done';
+    eye.textContent=s.stage;title.textContent=s.title;desc.textContent=s.desc;
+    const badge=document.createElement('span');badge.id='rpBadge';
+    badge.className=gold?'rp-badge badge-gold':'rp-badge badge-green';
+    let bt='+'+s.xp+' XP';
+    if(s.type==='special')bt+='  ◆ onboarding';
+    if(s.type==='finish')bt+='  ★ treasure';
+    badge.textContent=bt;panel.appendChild(badge);
+  } else if(current===unlockedUpTo+1){
+    panel.className='reveal-panel active-panel';
+    eye.className='rp-eye active';eye.textContent='Stage '+(current+1)+' · Ready to unlock';
+    title.textContent='?';desc.textContent="Hit 'Unlock Next' to reveal this stage.";
+  } else {
+    panel.className='reveal-panel';eye.className='rp-eye';
+    eye.textContent='Stage '+(current+1)+' · Locked';
+    title.textContent='?';desc.textContent='Complete previous stages to unlock this one.';
+  }
+}
+
+function updateStats(){
+  document.getElementById('s-done').textContent=Math.max(0,unlockedUpTo+1);
+  document.getElementById('s-xp').textContent=totalXP;
+}
+
+function scrollToCurrent(){
+  const scroll=document.querySelector('.track-scroll');
+  const stops=document.querySelectorAll('.stop-wrap');
+  const el=stops[current];
+  if(scroll&&el){scroll.scrollTo({left:el.offsetLeft-scroll.clientWidth/2+el.clientWidth/2,behavior:'smooth'});}
+}
+
+function select(i){if(i<=unlockedUpTo){current=i;render();}}
+
+function goNext(){
+  const next=unlockedUpTo+1;
+  if(next>=stages.length)return;
+  totalXP+=stages[next].xp;unlockedUpTo=next;current=next;render();
+  if(unlockedUpTo===stages.length-1){
+    document.getElementById('btnNext').disabled=true;
+    setTimeout(()=>{
+      document.getElementById('winXP').textContent='★ TOTAL XP: '+totalXP+' ★';
+      document.getElementById('navRow').style.display='none';
+      document.getElementById('winOverlay').classList.add('show');
+    },2500);
+  }
+}
+
+function goBack(){if(current>0){current--;render();}}
+
+function resetAll(){
+  current=0;unlockedUpTo=-1;totalXP=0;
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('navRow').style.display='flex';
+  document.getElementById('btnNext').disabled=false;
+  buildTrack();
+}
+
+buildTrack();
+</script>
+</body>
+</html>
